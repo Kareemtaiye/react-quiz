@@ -1,12 +1,12 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
-import App from "./App";
-import DateCounter from "./modules/DateCounter";
+import App from "./Components/App";
+// import DateCounter from "./modules/DateCounter";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <DateCounter />
+    <App />
   </React.StrictMode>
 );
