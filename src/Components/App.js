@@ -6,6 +6,12 @@ import Error from "./Error";
 import Question from "./Question";
 import StartQuestions from "./StartQuestions";
 import NextQuestion from "./NextQuestion";
+import FinishedScreen from "./FinishedScreen";
+import Timer from "./Timer";
+import Progress from "./Progress";
+import Footer from "./Footer";
+
+const SECS_PER_QUESTION = 30;
 
 const initialState = {
   questions: [],
@@ -15,6 +21,7 @@ const initialState = {
   index: 0,
   answer: null,
   points: 0,
+  secondsTimer: null,
 };
 
 function reducer(state, { type, payload }) {
@@ -22,7 +29,11 @@ function reducer(state, { type, payload }) {
     case "dataReady":
       return { ...state, questions: payload, status: "ready" };
     case "start":
-      return { ...state, status: "active" };
+      return {
+        ...state,
+        status: "active",
+        secondsTimer: state.questions.length * SECS_PER_QUESTION,
+      };
     case "newAnswer":
       const currQuestion = state.questions.at(state.index);
 
@@ -35,7 +46,17 @@ function reducer(state, { type, payload }) {
             : state.points,
       };
     case "nextQuestion":
-      return { ...state, index: state.index + 1, answer: null };
+      return {
+        ...state,
+        index: state.index + 1,
+        answer: null,
+      };
+    case "finish":
+      return { ...state, status: "finished" };
+    case "restart":
+      return { ...initialState, questions: state.questions, status: "ready" };
+    case "tick":
+      return { ...state, secondsTimer: state.secondsTimer - 1 };
 
     default:
       throw new Error("Action Unknown");
@@ -43,10 +64,8 @@ function reducer(state, { type, payload }) {
 }
 
 function App() {
-  const [{ questions, status, index, answer, points }, dispatch] = useReducer(
-    reducer,
-    initialState
-  );
+  const [{ questions, status, index, answer, points, secondsTimer }, dispatch] =
+    useReducer(reducer, initialState);
 
   const numQuestions = questions.length;
   const maxPoints = questions.reduce((prev, curr) => prev + curr.points, 0);
@@ -73,17 +92,41 @@ function App() {
           <StartQuestions dispatch={dispatch} numQuestions={numQuestions} />
         )}
         {status === "active" && (
-          <Question
-            question={questions[index]}
-            answer={answer}
+          <>
+            <Progress
+              maxPoints={maxPoints}
+              points={points}
+              answer={answer}
+              index={index}
+              numQuestions={numQuestions}
+            />
+            <Question
+              question={questions[index]}
+              answer={answer}
+              dispatch={dispatch}
+              maxPoints={maxPoints}
+              numQuestions={numQuestions}
+              index={index}
+              points={points}
+            />
+            <Footer>
+              <NextQuestion
+                dispatch={dispatch}
+                answer={answer}
+                numQuestions={numQuestions}
+                index={index}
+              />
+              <Timer dispatch={dispatch} secondsTimer={secondsTimer} />
+            </Footer>
+          </>
+        )}
+        {status === "finished" && (
+          <FinishedScreen
+            points={points}
             dispatch={dispatch}
             maxPoints={maxPoints}
-            numQuestions={numQuestions}
-            index={index}
-            points={points}
           />
         )}
-        <NextQuestion dispatch={dispatch} answer={answer} />
       </Main>
     </div>
   );
